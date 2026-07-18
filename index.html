@@ -381,11 +381,18 @@ statusRow.addEventListener('click', (e)=>{
   currentStatus = chip.dataset.s;
 });
 
+const BIN_URL = 'https://jsonblob.com/api/jsonBlob/019f7588-0a41-743e-ba55-80e881b2386b';
+
 // ---------- Storage ----------
 async function loadRecords(){
   try{
-    const res = await window.storage.get(STORAGE_KEY, true);
-    records = res && res.value ? JSON.parse(res.value) : [];
+    const res = await fetch(BIN_URL);
+    if(res.ok) {
+      records = await res.json();
+      if(!Array.isArray(records)) records = [];
+    } else {
+      records = [];
+    }
   }catch(err){
     records = [];
   }
@@ -394,9 +401,17 @@ async function loadRecords(){
 
 async function saveRecords(){
   try{
-    await window.storage.set(STORAGE_KEY, JSON.stringify(records), true);
+    const res = await fetch(BIN_URL, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(records)
+    });
+    if(!res.ok) throw new Error('Gagal simpan');
   }catch(err){
-    submitMsg.textContent = 'Gagal menyimpan data. Coba lagi.';
+    submitMsg.textContent = 'Gagal menyimpan data ke server. Coba lagi.';
   }
 }
 
@@ -425,7 +440,6 @@ function renderLog(){
           <div class="time">${dt}</div>
           ${r.note ? `<div class="note">${escapeHtml(r.note)}</div>` : ''}
         </div>
-        <button class="del" data-id="${r.id}" title="Hapus">✕</button>
       </div>
     `;
   }).join('');
@@ -436,14 +450,6 @@ function escapeHtml(s){
   d.textContent = s;
   return d.innerHTML;
 }
-
-logList.addEventListener('click', async (e)=>{
-  const btn = e.target.closest('.del');
-  if(!btn) return;
-  records = records.filter(r => r.id !== btn.dataset.id);
-  await saveRecords();
-  renderLog();
-});
 
 searchInput.addEventListener('input', renderLog);
 
