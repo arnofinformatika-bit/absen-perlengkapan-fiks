@@ -1,0 +1,515 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Absen Kamera</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1B2A2E;
+    --paper:#F1EEE6;
+    --panel:#FFFFFF;
+    --accent:#2F6F5E;
+    --accent-dark:#204B40;
+    --accent-warm:#E0A542;
+    --line:#DAD5C6;
+    --muted:#6E6858;
+    --danger:#B0473E;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'IBM Plex Sans', sans-serif;
+    min-height:100vh;
+    padding:28px 16px 60px;
+  }
+  .mono{font-family:'IBM Plex Mono', monospace;}
+  .wrap{max-width:1080px;margin:0 auto;}
+
+  header.top{margin-bottom:28px;}
+  .eyebrow{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    letter-spacing:.18em;
+    color:var(--accent-dark);
+    font-weight:600;
+    margin-bottom:6px;
+  }
+  h1{
+    font-size:32px;
+    margin:0 0 6px;
+    letter-spacing:-0.01em;
+    font-weight:700;
+  }
+  .sub{color:var(--muted);font-size:14.5px;max-width:520px;line-height:1.5;}
+
+  .grid{
+    display:grid;
+    grid-template-columns:380px 1fr;
+    gap:22px;
+    align-items:start;
+  }
+  @media (max-width:820px){
+    .grid{grid-template-columns:1fr;}
+  }
+
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:20px;
+  }
+
+  /* Camera / badge card */
+  .cam-frame{
+    position:relative;
+    aspect-ratio:4/3;
+    background:#0f1a1c;
+    border-radius:10px;
+    overflow:hidden;
+    border:1px solid var(--line);
+  }
+  .cam-frame video, .cam-frame img, .cam-frame canvas{
+    width:100%;height:100%;object-fit:cover;display:block;
+  }
+  .cam-empty{
+    position:absolute;inset:0;
+    display:flex;align-items:center;justify-content:center;
+    color:#cfd6d2;font-size:13px;text-align:center;padding:20px;
+  }
+  .stamp{
+    position:absolute;
+    bottom:10px;left:10px;
+    background:rgba(27,42,46,0.78);
+    color:#fff;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    padding:5px 9px;
+    border-radius:6px;
+    letter-spacing:.03em;
+  }
+  .badge-ring{
+    position:absolute;
+    top:10px;right:10px;
+    width:34px;height:34px;
+    border-radius:50%;
+    background:var(--accent-warm);
+    color:var(--ink);
+    display:flex;align-items:center;justify-content:center;
+    font-weight:700;font-size:14px;
+    box-shadow:0 0 0 3px rgba(255,255,255,.35);
+  }
+
+  .cam-actions{display:flex;gap:8px;margin-top:12px;}
+  button{
+    font-family:'IBM Plex Sans', sans-serif;
+    border:none;border-radius:9px;
+    padding:11px 14px;
+    font-size:14px;font-weight:600;
+    cursor:pointer;
+    transition:transform .12s ease, opacity .12s ease;
+  }
+  button:active{transform:scale(0.97);}
+  .btn-primary{background:var(--accent);color:#fff;flex:1;}
+  .btn-primary:hover{background:var(--accent-dark);}
+  .btn-ghost{background:transparent;color:var(--ink);border:1px solid var(--line);}
+  .btn-ghost:hover{background:var(--paper);}
+  .btn-full{width:100%;}
+  button:disabled{opacity:.45;cursor:not-allowed;}
+
+  .field{margin-top:16px;}
+  label{
+    display:block;font-size:12px;font-weight:600;
+    color:var(--muted);margin-bottom:6px;
+    letter-spacing:.02em;text-transform:uppercase;
+  }
+  input[type="text"], select, textarea{
+    width:100%;
+    border:1px solid var(--line);
+    border-radius:8px;
+    padding:10px 11px;
+    font-size:14.5px;
+    font-family:'IBM Plex Sans', sans-serif;
+    background:#fff;
+    color:var(--ink);
+  }
+  input:focus, select:focus, textarea:focus{
+    outline:2px solid var(--accent);outline-offset:1px;
+  }
+  textarea{resize:vertical;min-height:56px;}
+
+  .status-row{display:flex;gap:6px;margin-top:6px;}
+  .status-chip{
+    flex:1;text-align:center;
+    border:1px solid var(--line);
+    border-radius:8px;padding:9px 4px;
+    font-size:12.5px;font-weight:600;cursor:pointer;
+    color:var(--muted);background:#fff;
+  }
+  .status-chip.active[data-s="Hadir"]{background:var(--accent);color:#fff;border-color:var(--accent);}
+  .status-chip.active[data-s="Izin"]{background:var(--accent-warm);color:var(--ink);border-color:var(--accent-warm);}
+  .status-chip.active[data-s="Sakit"]{background:#C98A3B;color:#fff;border-color:#C98A3B;}
+  .status-chip.active[data-s="Alpa"]{background:var(--danger);color:#fff;border-color:var(--danger);}
+
+  .submit-msg{font-size:12.5px;margin-top:10px;color:var(--danger);min-height:16px;}
+
+  /* Log panel */
+  .log-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:10px;flex-wrap:wrap;}
+  .log-head h2{font-size:17px;margin:0;font-weight:700;}
+  .count-pill{
+    font-family:'IBM Plex Mono', monospace;font-size:11.5px;
+    background:var(--paper);border:1px solid var(--line);
+    padding:3px 9px;border-radius:20px;color:var(--muted);
+  }
+  .log-tools{display:flex;gap:8px;}
+  .log-tools input{max-width:160px;padding:8px 10px;font-size:13px;}
+  .log-tools button{padding:8px 12px;font-size:12.5px;}
+
+  .log-list{display:flex;flex-direction:column;gap:10px;max-height:640px;overflow-y:auto;padding-right:4px;}
+  .log-empty{
+    text-align:center;color:var(--muted);font-size:13.5px;
+    padding:50px 10px;border:1px dashed var(--line);border-radius:10px;
+  }
+  .entry{
+    display:flex;gap:12px;
+    border:1px solid var(--line);border-radius:10px;
+    padding:10px;background:#fff;position:relative;
+  }
+  .entry .no{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;color:var(--muted);
+    position:absolute;top:8px;right:10px;
+  }
+  .entry img{
+    width:58px;height:58px;border-radius:8px;object-fit:cover;flex-shrink:0;
+    border:1px solid var(--line);
+  }
+  .entry .info{flex:1;min-width:0;}
+  .entry .name-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .entry .name{font-weight:700;font-size:14.5px;}
+  .pill{
+    font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:20px;color:#fff;
+    letter-spacing:.02em;
+  }
+  .pill.Hadir{background:var(--accent);}
+  .pill.Izin{background:var(--accent-warm);color:var(--ink);}
+  .pill.Sakit{background:#C98A3B;}
+  .pill.Alpa{background:var(--danger);}
+  .entry .time{font-family:'IBM Plex Mono', monospace;font-size:11px;color:var(--muted);margin-top:2px;}
+  .entry .note{font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.4;}
+  .del{
+    background:transparent;border:none;color:var(--muted);
+    font-size:16px;cursor:pointer;padding:2px 6px;line-height:1;
+    align-self:flex-start;margin-top:14px;
+  }
+  .del:hover{color:var(--danger);}
+
+  .note-share{
+    font-size:11.5px;color:var(--muted);margin-top:10px;text-align:center;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="eyebrow">SISTEM ABSENSI · KAMERA</div>
+    <h1>Absen Kamera</h1>
+    <p class="sub">Ambil foto langsung dari kamera, isi nama dan keterangan, lalu catat kehadiran. Riwayat tersimpan otomatis.</p>
+  </header>
+
+  <div class="grid">
+
+    <!-- Capture + form -->
+    <div class="panel">
+      <div class="cam-frame" id="camFrame">
+        <video id="video" autoplay playsinline muted></video>
+        <img id="photoPreview" style="display:none;">
+        <div class="cam-empty" id="camEmpty">Meminta izin kamera…</div>
+        <div class="badge-ring" id="badgeRing" style="display:none;">✓</div>
+        <div class="stamp" id="stampTime" style="display:none;"></div>
+      </div>
+      <canvas id="canvas" style="display:none;"></canvas>
+
+      <div class="cam-actions">
+        <button class="btn-primary btn-full" id="btnCapture" disabled>Ambil Foto</button>
+        <button class="btn-ghost" id="btnRetake" style="display:none;">Ulangi</button>
+      </div>
+
+      <input type="file" id="fileFallback" accept="image/*" capture="user" style="display:none;">
+      <button class="btn-ghost btn-full" id="btnUseFile" style="display:none;margin-top:8px;">Gunakan Kamera Perangkat</button>
+
+      <div class="field">
+        <label for="inpName">Nama</label>
+        <input type="text" id="inpName" placeholder="Nama lengkap">
+      </div>
+
+      <div class="field">
+        <label>Keterangan</label>
+        <div class="status-row" id="statusRow">
+          <div class="status-chip active" data-s="Hadir">Hadir</div>
+          <div class="status-chip" data-s="Izin">Izin</div>
+          <div class="status-chip" data-s="Sakit">Sakit</div>
+          <div class="status-chip" data-s="Alpa">Alpa</div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="inpNote">Catatan (opsional)</label>
+        <textarea id="inpNote" placeholder="Tambahkan catatan, misalnya keperluan izin..."></textarea>
+      </div>
+
+      <div class="submit-msg" id="submitMsg"></div>
+
+      <button class="btn-primary btn-full" id="btnSubmit" style="margin-top:4px;">Catat Absen</button>
+      <div class="note-share">Riwayat absen di bawah ini bersifat bersama — terlihat oleh semua pengguna halaman ini.</div>
+    </div>
+
+    <!-- Log -->
+    <div class="panel">
+      <div class="log-head">
+        <h2>Riwayat Absen</h2>
+        <span class="count-pill mono" id="countPill">0 catatan</span>
+      </div>
+      <div class="log-tools" style="margin-bottom:12px;">
+        <input type="text" id="searchInput" placeholder="Cari nama…">
+        <button class="btn-ghost" id="btnExport">Ekspor CSV</button>
+      </div>
+      <div class="log-list" id="logList">
+        <div class="log-empty">Belum ada catatan absen.</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+const video = document.getElementById('video');
+const photoPreview = document.getElementById('photoPreview');
+const camEmpty = document.getElementById('camEmpty');
+const badgeRing = document.getElementById('badgeRing');
+const stampTime = document.getElementById('stampTime');
+const canvas = document.getElementById('canvas');
+const btnCapture = document.getElementById('btnCapture');
+const btnRetake = document.getElementById('btnRetake');
+const fileFallback = document.getElementById('fileFallback');
+const btnUseFile = document.getElementById('btnUseFile');
+const inpName = document.getElementById('inpName');
+const inpNote = document.getElementById('inpNote');
+const statusRow = document.getElementById('statusRow');
+const submitMsg = document.getElementById('submitMsg');
+const btnSubmit = document.getElementById('btnSubmit');
+const logList = document.getElementById('logList');
+const countPill = document.getElementById('countPill');
+const searchInput = document.getElementById('searchInput');
+const btnExport = document.getElementById('btnExport');
+
+let currentStatus = 'Hadir';
+let capturedPhoto = null;
+let stream = null;
+let records = [];
+
+const STORAGE_KEY = 'absen-log';
+
+// ---------- Camera ----------
+async function startCamera(){
+  try{
+    stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:'user' }, audio:false });
+    video.srcObject = stream;
+    camEmpty.style.display = 'none';
+    btnCapture.disabled = false;
+  }catch(err){
+    camEmpty.textContent = 'Kamera tidak dapat diakses. Gunakan opsi di bawah.';
+    btnUseFile.style.display = 'block';
+  }
+}
+startCamera();
+
+btnCapture.addEventListener('click', ()=>{
+  const w = 480, h = 360;
+  canvas.width = w; canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(video, 0, 0, w, h);
+  capturedPhoto = canvas.toDataURL('image/jpeg', 0.75);
+  showCaptured();
+});
+
+btnRetake.addEventListener('click', ()=>{
+  capturedPhoto = null;
+  video.style.display = 'block';
+  photoPreview.style.display = 'none';
+  badgeRing.style.display = 'none';
+  stampTime.style.display = 'none';
+  btnCapture.style.display = 'block';
+  btnRetake.style.display = 'none';
+});
+
+function showCaptured(){
+  photoPreview.src = capturedPhoto;
+  video.style.display = 'none';
+  photoPreview.style.display = 'block';
+  badgeRing.style.display = 'flex';
+  stampTime.style.display = 'block';
+  stampTime.textContent = new Date().toLocaleString('id-ID', { dateStyle:'medium', timeStyle:'short' });
+  btnCapture.style.display = 'none';
+  btnRetake.style.display = 'block';
+}
+
+btnUseFile.addEventListener('click', ()=> fileFallback.click());
+fileFallback.addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    capturedPhoto = reader.result;
+    showCaptured();
+  };
+  reader.readAsDataURL(file);
+});
+
+// ---------- Status chips ----------
+statusRow.addEventListener('click', (e)=>{
+  const chip = e.target.closest('.status-chip');
+  if(!chip) return;
+  document.querySelectorAll('.status-chip').forEach(c=>c.classList.remove('active'));
+  chip.classList.add('active');
+  currentStatus = chip.dataset.s;
+});
+
+// ---------- Storage ----------
+async function loadRecords(){
+  try{
+    const res = await window.storage.get(STORAGE_KEY, true);
+    records = res && res.value ? JSON.parse(res.value) : [];
+  }catch(err){
+    records = [];
+  }
+  renderLog();
+}
+
+async function saveRecords(){
+  try{
+    await window.storage.set(STORAGE_KEY, JSON.stringify(records), true);
+  }catch(err){
+    submitMsg.textContent = 'Gagal menyimpan data. Coba lagi.';
+  }
+}
+
+function renderLog(){
+  const q = searchInput.value.trim().toLowerCase();
+  const filtered = q ? records.filter(r => r.name.toLowerCase().includes(q)) : records;
+  countPill.textContent = records.length + ' catatan';
+
+  if(filtered.length === 0){
+    logList.innerHTML = '<div class="log-empty">' + (q ? 'Tidak ada nama yang cocok.' : 'Belum ada catatan absen.') + '</div>';
+    return;
+  }
+
+  logList.innerHTML = filtered.map((r, idx)=>{
+    const dt = new Date(r.timestamp).toLocaleString('id-ID', { dateStyle:'medium', timeStyle:'short' });
+    const seq = records.length - records.findIndex(x => x.id === r.id);
+    return `
+      <div class="entry">
+        <span class="no mono">#${String(seq).padStart(3,'0')}</span>
+        <img src="${r.photo}" alt="${escapeHtml(r.name)}">
+        <div class="info">
+          <div class="name-row">
+            <span class="name">${escapeHtml(r.name)}</span>
+            <span class="pill ${r.status}">${r.status}</span>
+          </div>
+          <div class="time">${dt}</div>
+          ${r.note ? `<div class="note">${escapeHtml(r.note)}</div>` : ''}
+        </div>
+        <button class="del" data-id="${r.id}" title="Hapus">✕</button>
+      </div>
+    `;
+  }).join('');
+}
+
+function escapeHtml(s){
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+logList.addEventListener('click', async (e)=>{
+  const btn = e.target.closest('.del');
+  if(!btn) return;
+  records = records.filter(r => r.id !== btn.dataset.id);
+  await saveRecords();
+  renderLog();
+});
+
+searchInput.addEventListener('input', renderLog);
+
+// ---------- Submit ----------
+btnSubmit.addEventListener('click', async ()=>{
+  submitMsg.textContent = '';
+  const name = inpName.value.trim();
+
+  if(!name){
+    submitMsg.textContent = 'Nama wajib diisi.';
+    return;
+  }
+  if(!capturedPhoto){
+    submitMsg.textContent = 'Ambil foto terlebih dahulu.';
+    return;
+  }
+
+  btnSubmit.disabled = true;
+  btnSubmit.textContent = 'Menyimpan…';
+
+  const record = {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+    name,
+    status: currentStatus,
+    note: inpNote.value.trim(),
+    photo: capturedPhoto,
+    timestamp: Date.now()
+  };
+
+  records.unshift(record);
+  await saveRecords();
+  renderLog();
+
+  // reset form
+  inpName.value = '';
+  inpNote.value = '';
+  capturedPhoto = null;
+  video.style.display = 'block';
+  photoPreview.style.display = 'none';
+  badgeRing.style.display = 'none';
+  stampTime.style.display = 'none';
+  btnCapture.style.display = 'block';
+  btnRetake.style.display = 'none';
+
+  btnSubmit.disabled = false;
+  btnSubmit.textContent = 'Catat Absen';
+});
+
+// ---------- Export CSV ----------
+btnExport.addEventListener('click', ()=>{
+  if(records.length === 0) return;
+  const rows = [['Nama','Keterangan','Catatan','Waktu']];
+  records.forEach(r=>{
+    rows.push([r.name, r.status, r.note || '', new Date(r.timestamp).toLocaleString('id-ID')]);
+  });
+  const csv = rows.map(row => row.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type:'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'riwayat-absen.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+loadRecords();
+</script>
+</body>
+</html>
