@@ -187,8 +187,9 @@
   }
   .entry img{
     width:58px;height:58px;border-radius:8px;object-fit:cover;flex-shrink:0;
-    border:1px solid var(--line);
+    border:1px solid var(--line); cursor: pointer; transition: opacity 0.2s;
   }
+  .entry img:hover{ opacity: 0.8; }
   .entry .info{flex:1;min-width:0;}
   .entry .name-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
   .entry .name{font-weight:700;font-size:14.5px;}
@@ -211,6 +212,29 @@
 
   .note-share{
     font-size:11.5px;color:var(--muted);margin-top:10px;text-align:center;
+  }
+  
+  /* Photo Modal */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.8);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 999; padding: 20px; opacity: 0; pointer-events: none;
+    transition: opacity 0.2s ease;
+  }
+  .modal-overlay.show { opacity: 1; pointer-events: auto; }
+  .modal-content {
+    position: relative; max-width: 100%; max-height: 100%;
+  }
+  .modal-content img {
+    max-width: 100%; max-height: 90vh; border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  }
+  .modal-close {
+    position: absolute; top: -16px; right: -16px;
+    background: var(--danger); color: #fff; width: 32px; height: 32px;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-weight: bold; cursor: pointer; border: 2px solid #fff;
+    font-size: 14px; box-shadow: 0 2px 10px rgba(0,0,0,0.2);
   }
 </style>
 </head>
@@ -285,6 +309,14 @@
       </div>
     </div>
 
+  </div>
+</div>
+
+<!-- Modal Foto -->
+<div class="modal-overlay" id="photoModal">
+  <div class="modal-content">
+    <div class="modal-close" id="btnCloseModal">✕</div>
+    <img id="modalImg" src="">
   </div>
 </div>
 
@@ -440,7 +472,7 @@ function renderLog(){
     return `
       <div class="entry">
         <span class="no mono">#${String(seq).padStart(3,'0')}</span>
-        <img src="${r.photo}" alt="${escapeHtml(r.name)}">
+        <img src="${r.photo}" alt="${escapeHtml(r.name)}" class="thumb-img" data-photo="${r.photo}" title="Klik untuk lihat foto">
         <div class="info">
           <div class="name-row">
             <span class="name">${escapeHtml(r.name)}</span>
@@ -462,10 +494,27 @@ function escapeHtml(s){
 }
 
 logList.addEventListener('click', async (e)=>{
+  if(e.target.classList.contains('thumb-img')){
+    document.getElementById('modalImg').src = e.target.dataset.photo;
+    document.getElementById('photoModal').classList.add('show');
+    return;
+  }
+
   const btn = e.target.closest('.del');
   if(!btn) return;
-  btn.disabled = true;
-  await deleteRecord(btn.dataset.id);
+  if(confirm('Hapus absen ini?')) {
+    btn.disabled = true;
+    await deleteRecord(btn.dataset.id);
+  }
+});
+
+document.getElementById('btnCloseModal').addEventListener('click', ()=>{
+  document.getElementById('photoModal').classList.remove('show');
+});
+document.getElementById('photoModal').addEventListener('click', (e)=>{
+  if(e.target === document.getElementById('photoModal')){
+    document.getElementById('photoModal').classList.remove('show');
+  }
 });
 
 searchInput.addEventListener('input', renderLog);
