@@ -288,7 +288,21 @@
   </div>
 </div>
 
-<script>
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+import { getDatabase, ref, onValue, set, remove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyB-8zY8eXo9MsJYFRyODqY_2IzOkkcSnHE",
+  authDomain: "absenkamera-78e82.firebaseapp.com",
+  databaseURL: "https://absenkamera-78e82-default-rtdb.firebaseio.com",
+  projectId: "absenkamera-78e82",
+  storageBucket: "absenkamera-78e82.firebasestorage.app",
+  messagingSenderId: "736935799698",
+  appId: "1:736935799698:web:add67ce46ffbbb77c96f4b"
+};
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
 const video = document.getElementById('video');
 const photoPreview = document.getElementById('photoPreview');
 const camEmpty = document.getElementById('camEmpty');
@@ -381,37 +395,32 @@ statusRow.addEventListener('click', (e)=>{
   currentStatus = chip.dataset.s;
 });
 
-const BIN_URL = 'https://jsonblob.com/api/jsonBlob/019f7588-0a41-743e-ba55-80e881b2386b';
-
 // ---------- Storage ----------
-async function loadRecords(){
-  try{
-    const res = await fetch(BIN_URL);
-    if(res.ok) {
-      records = await res.json();
-      if(!Array.isArray(records)) records = [];
-    } else {
-      records = [];
-    }
-  }catch(err){
+const recordsRef = ref(db, 'absen-log');
+
+onValue(recordsRef, (snapshot) => {
+  const data = snapshot.val();
+  if (data) {
+    records = Object.values(data).sort((a, b) => b.timestamp - a.timestamp);
+  } else {
     records = [];
   }
   renderLog();
+});
+
+async function saveRecord(record){
+  try{
+    await set(ref(db, 'absen-log/' + record.id), record);
+  }catch(err){
+    submitMsg.textContent = 'Gagal menyimpan data ke server. Pastikan Database Rules diset ke true.';
+  }
 }
 
-async function saveRecords(){
+async function deleteRecord(id){
   try{
-    const res = await fetch(BIN_URL, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
-      },
-      body: JSON.stringify(records)
-    });
-    if(!res.ok) throw new Error('Gagal simpan');
+    await remove(ref(db, 'absen-log/' + id));
   }catch(err){
-    submitMsg.textContent = 'Gagal menyimpan data ke server. Coba lagi.';
+    console.error(err);
   }
 }
 
@@ -440,6 +449,7 @@ function renderLog(){
           <div class="time">${dt}</div>
           ${r.note ? `<div class="note">${escapeHtml(r.note)}</div>` : ''}
         </div>
+        <button class="del" data-id="${r.id}" title="Hapus">✕</button>
       </div>
     `;
   }).join('');
@@ -450,6 +460,13 @@ function escapeHtml(s){
   d.textContent = s;
   return d.innerHTML;
 }
+
+logList.addEventListener('click', async (e)=>{
+  const btn = e.target.closest('.del');
+  if(!btn) return;
+  btn.disabled = true;
+  await deleteRecord(btn.dataset.id);
+});
 
 searchInput.addEventListener('input', renderLog);
 
@@ -479,9 +496,7 @@ btnSubmit.addEventListener('click', async ()=>{
     timestamp: Date.now()
   };
 
-  records.unshift(record);
-  await saveRecords();
-  renderLog();
+  await saveRecord(record);
 
   // reset form
   inpName.value = '';
@@ -515,7 +530,7 @@ btnExport.addEventListener('click', ()=>{
   URL.revokeObjectURL(url);
 });
 
-loadRecords();
+// Initial load is handled automatically by onValue
 </script>
 </body>
 </html>
