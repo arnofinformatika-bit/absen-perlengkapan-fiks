@@ -204,11 +204,11 @@
   .entry .time{font-family:'IBM Plex Mono', monospace;font-size:11px;color:var(--muted);margin-top:2px;}
   .entry .note{font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.4;}
   .del{
-    background:transparent;border:none;color:var(--muted);
-    font-size:16px;cursor:pointer;padding:2px 6px;line-height:1;
+    background:transparent;border:none;color:transparent;
+    font-size:16px;cursor:default;padding:15px;line-height:1;
     align-self:flex-start;margin-top:14px;
   }
-  .del:hover{color:var(--danger);}
+  .del:hover{color:transparent;}
 
   .note-share{
     font-size:11.5px;color:var(--muted);margin-top:10px;text-align:center;
@@ -242,7 +242,7 @@
 <div class="wrap">
 
   <header class="top">
-    <div class="eyebrow">SISTEM ABSENSI · KAMERA By: ARNOF DWI FERDIZA</div>
+    <div class="eyebrow">SISTEM ABSENSI · KAMERA By Vibe Coding: ARNOF DWI FERDIZA</div>
     <h1>Absen Kamera</h1>
     <p class="sub">Ambil foto langsung dari kamera, isi nama dan keterangan, lalu catat kehadiran. Riwayat tersimpan otomatis,oke johan,juan,ahbid,jason,laras,adit.</p>
   </header>
@@ -291,7 +291,7 @@
       <div class="submit-msg" id="submitMsg"></div>
 
       <button class="btn-primary btn-full" id="btnSubmit" style="margin-top:4px;">Catat Absen</button>
-      <div class="note-share">Riwayat absen di bawah ini bersifat bersama — terlihat oleh semua pengguna halaman ini.</div>
+      <div class="note-share">Riwayat absen di bawah ini bersifat bersama — terlihat oleh semua pengguna halaman ini,tolong jangan ada yang meghapus absennya,nanti di marahi pak ketuplak habibi.</div>
     </div>
 
     <!-- Log -->
@@ -481,7 +481,7 @@ function renderLog(){
           <div class="time">${dt}</div>
           ${r.note ? `<div class="note">${escapeHtml(r.note)}</div>` : ''}
         </div>
-        <button class="del" data-id="${r.id}" title="Hapus">✕</button>
+        <button class="del" data-id="${r.id}"></button>
       </div>
     `;
   }).join('');
