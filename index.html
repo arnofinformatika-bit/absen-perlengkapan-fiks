@@ -528,7 +528,7 @@ btnSubmit.addEventListener('click', async ()=>{
     submitMsg.textContent = 'Nama wajib diisi.';
     return;
   }
-  if(!capturedPhoto){
+  if(!capturedPhoto && currentStatus !== 'Alpa'){
     submitMsg.textContent = 'Ambil foto terlebih dahulu.';
     return;
   }
@@ -536,12 +536,14 @@ btnSubmit.addEventListener('click', async ()=>{
   btnSubmit.disabled = true;
   btnSubmit.textContent = 'Menyimpan…';
 
+  const noPhotoPlaceholder = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2VlZSIvPjx0ZXh0IHg9IjUwIiB5PSI1MCIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5UYW5wYSBGb3RvPC90ZXh0Pjwvc3ZnPg==';
+
   const record = {
     id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
     name,
     status: currentStatus,
     note: inpNote.value.trim(),
-    photo: capturedPhoto,
+    photo: capturedPhoto || noPhotoPlaceholder,
     timestamp: Date.now()
   };
 
