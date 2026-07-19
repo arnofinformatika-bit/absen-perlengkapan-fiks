@@ -536,7 +536,10 @@ btnSubmit.addEventListener('click', async ()=>{
   btnSubmit.disabled = true;
   btnSubmit.textContent = 'Menyimpan…';
 
-  const noPhotoPlaceholder = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDAiIGhlaWdodD0iMTAwIj48cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iI2VlZSIvPjx0ZXh0IHg9IjUwIiB5PSI1MCIgZm9udC1mYW1pbHk9InNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iMTQiIGZpbGw9IiM5OTkiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGR5PSIuM2VtIj5UYW5wYSBGb3RvPC90ZXh0Pjwvc3ZnPg==';
+  const shortName = name.length > 12 ? name.substring(0, 12) + '...' : name;
+  const safeText = (shortName + ' ' + currentStatus).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  const svgString = `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect width="200" height="200" fill="#F1EEE6"/><text x="100" y="100" font-family="sans-serif" font-size="18" font-weight="bold" fill="#B0473E" text-anchor="middle" dy=".3em">${safeText}</text></svg>`;
+  const noPhotoPlaceholder = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svgString);
 
   const record = {
     id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
