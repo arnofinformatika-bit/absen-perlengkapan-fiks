@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Absen Kamera</title>
+<script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api/dist/face-api.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -363,26 +364,71 @@ let records = [];
 const STORAGE_KEY = 'absen-log';
 
 // ---------- Camera ----------
+let modelsLoaded = false;
 async function startCamera(){
   try{
     stream = await navigator.mediaDevices.getUserMedia({ video:{ facingMode:'user' }, audio:false });
     video.srcObject = stream;
+    camEmpty.textContent = 'Memuat AI Wajah...';
+    btnCapture.disabled = true;
+
+    const modelPath = 'https://cdn.jsdelivr.net/npm/@vladmandic/face-api/model/';
+    await faceapi.nets.tinyFaceDetector.loadFromUri(modelPath);
+    await faceapi.nets.faceExpressionNet.loadFromUri(modelPath);
+    modelsLoaded = true;
+
     camEmpty.style.display = 'none';
     btnCapture.disabled = false;
   }catch(err){
-    camEmpty.textContent = 'Kamera tidak dapat diakses. Gunakan opsi di bawah.';
+    console.error(err);
+    camEmpty.textContent = 'Kamera gagal. Pastikan izinkan akses kamera.';
     btnUseFile.style.display = 'block';
   }
 }
 startCamera();
 
-btnCapture.addEventListener('click', ()=>{
+btnCapture.addEventListener('click', async ()=>{
+  if(!modelsLoaded) {
+    alert('Sistem AI belum siap, tunggu sebentar ya.');
+    return;
+  }
+
   const w = 360, h = 640;
   canvas.width = w; canvas.height = h;
   const ctx = canvas.getContext('2d');
   ctx.drawImage(video, 0, 0, w, h);
-  capturedPhoto = canvas.toDataURL('image/jpeg', 0.75);
-  showCaptured();
+
+  btnCapture.disabled = true;
+  const oldText = btnCapture.textContent;
+  btnCapture.textContent = 'Mendeteksi Senyum...';
+
+  try {
+    const detections = await faceapi.detectAllFaces(canvas, new faceapi.TinyFaceDetectorOptions()).withFaceExpressions();
+    
+    if(detections.length === 0){
+      alert('Wajah tidak terdeteksi. Pastikan wajah terlihat jelas di kamera!');
+      btnCapture.textContent = oldText;
+      btnCapture.disabled = false;
+      return;
+    }
+
+    const isSmiling = detections.some(d => d.expressions.happy > 0.6);
+    if(!isSmiling){
+      alert('Kamera mendeteksi kamu belum senyum. Tolong senyum untuk absen! 😊');
+      btnCapture.textContent = oldText;
+      btnCapture.disabled = false;
+      return;
+    }
+
+    capturedPhoto = canvas.toDataURL('image/jpeg', 0.75);
+    showCaptured();
+  } catch(err) {
+    console.error(err);
+    alert('Terjadi kesalahan saat mendeteksi wajah.');
+  }
+
+  btnCapture.textContent = oldText;
+  btnCapture.disabled = false;
 });
 
 btnRetake.addEventListener('click', ()=>{
