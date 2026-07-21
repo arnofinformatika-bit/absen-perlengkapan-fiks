@@ -599,6 +599,41 @@ document.getElementById('photoModal').addEventListener('click', (e)=>{
 
 searchInput.addEventListener('input', renderLog);
 
+// ---------- Lokasi ----------
+function getDistance(lat1, lon1, lat2, lon2) {
+  const R = 6371000;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+function verifyLocation() {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      return reject('Geolokasi tidak didukung browser ini.');
+    }
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const TARGET_LAT = -5.3789826;
+        const TARGET_LNG = 105.2519565;
+        const dist = getDistance(position.coords.latitude, position.coords.longitude, TARGET_LAT, TARGET_LNG);
+        // Toleransi radius 200 meter
+        if (dist <= 200) {
+          resolve(true);
+        } else {
+          reject(`Lokasi Anda di luar jangkauan kelas (Jarak: ${Math.round(dist)}m).`);
+        }
+      },
+      (error) => {
+        reject('Gagal membaca lokasi. Pastikan GPS aktif dan diizinkan.');
+      },
+      { enableHighAccuracy: true, timeout: 10000 }
+    );
+  });
+}
+
 // ---------- Submit ----------
 btnSubmit.addEventListener('click', async ()=>{
   submitMsg.textContent = '';
@@ -611,6 +646,19 @@ btnSubmit.addEventListener('click', async ()=>{
   if(!capturedPhoto && currentStatus !== 'Alpa'){
     submitMsg.textContent = 'Ambil foto terlebih dahulu.';
     return;
+  }
+
+  if(currentStatus === 'Kelas') {
+    btnSubmit.disabled = true;
+    btnSubmit.textContent = 'Mengecek Lokasi...';
+    try {
+      await verifyLocation();
+    } catch(err) {
+      submitMsg.textContent = err;
+      btnSubmit.disabled = false;
+      btnSubmit.textContent = 'Catat Absen';
+      return;
+    }
   }
 
   btnSubmit.disabled = true;
