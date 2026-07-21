@@ -268,7 +268,7 @@
     cursor: pointer;
     transition: transform 0.3s ease;
   }
-  .fab-container:hover .fab-main {
+  .fab-container.open .fab-main {
     transform: rotate(45deg);
   }
   .fab-items {
@@ -280,7 +280,7 @@
     transform: translateY(20px);
     transition: all 0.3s ease;
   }
-  .fab-container:hover .fab-items {
+  .fab-container.open .fab-items {
     opacity: 1;
     pointer-events: auto;
     transform: translateY(0);
@@ -405,8 +405,8 @@
 </div>
 
 <!-- FAB Menu -->
-<div class="fab-container">
-  <div class="fab-main">+</div>
+<div class="fab-container" id="fabContainer">
+  <div class="fab-main" id="fabMain">+</div>
   <div class="fab-items">
     <a href="https://www.tiktok.com/@nof.dwifer" target="_blank" class="fab-item" data-tooltip="TikTok: @nof.dwifer">
       <svg viewBox="0 0 448 512"><!--!Font Awesome Free 6.5.1--><path d="M448 209.9a210.1 210.1 0 0 1 -122.8-39.3V349.4A162.6 162.6 0 1 1 185 188.3V278.2a74.6 74.6 0 1 0 52.2 71.2V0l88 0a121.2 121.2 0 0 0 1.9 22.2h0A122.2 122.2 0 0 0 381 102.4a121.4 121.4 0 0 0 67 20.1z"/></svg>
@@ -425,6 +425,20 @@
     </a>
   </div>
 </div>
+
+<script>
+  const fabContainer = document.getElementById('fabContainer');
+  const fabMain = document.getElementById('fabMain');
+  fabMain.addEventListener('click', (e) => {
+    e.stopPropagation();
+    fabContainer.classList.toggle('open');
+  });
+  document.addEventListener('click', (e) => {
+    if (!fabContainer.contains(e.target)) {
+      fabContainer.classList.remove('open');
+    }
+  });
+</script>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
