@@ -314,6 +314,30 @@
     box-shadow: 0 4px 10px rgba(2, 132, 199, 0.2);
   }
 
+  @media (max-width: 500px) {
+    .entry {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 12px;
+      padding-bottom: 48px;
+    }
+    .entry img {
+      width: 100%;
+      height: 180px;
+      border-radius: 12px;
+    }
+    .entry .info {
+      width: 100%;
+      padding-right: 0;
+    }
+    .entry-actions {
+      position: absolute;
+      bottom: 12px;
+      right: 12px;
+      margin-left: 0;
+    }
+  }
+
   .note-share{
     font-size:11.5px;color:var(--muted);margin-top:10px;text-align:center; position:relative; z-index:2;
   }
