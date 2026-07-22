@@ -292,22 +292,26 @@
   .entry .note{font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.4;}
   .entry-actions {
     display: flex;
-    flex-direction: column;
-    gap: 8px;
     align-self: center;
     margin-left: auto;
-    align-items: center;
   }
-  .edit, .del{
-    background: transparent; border: none; color: rgba(0, 0, 0, 0.02);
-    font-size: 11px; cursor: pointer; padding: 6px; line-height: 1;
+  .edit {
+    background: rgba(2, 132, 199, 0.08);
+    border: 1px solid rgba(2, 132, 199, 0.2);
+    color: var(--accent-dark);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 6px 12px;
+    border-radius: 8px;
+    line-height: 1;
     transition: var(--transition);
   }
-  .edit:hover{
-    color: rgba(2, 132, 199, 0.25);
-  }
-  .del:hover{
-    color: rgba(239, 68, 68, 0.2);
+  .edit:hover {
+    background: var(--accent);
+    color: #fff;
+    transform: scale(1.05);
+    box-shadow: 0 4px 10px rgba(2, 132, 199, 0.2);
   }
 
   .note-share{
@@ -783,7 +787,7 @@ function renderLog(){
     const seq = records.length - records.findIndex(x => x.id === r.id);
     return `
       <div class="entry">
-        <span class="no mono">#${String(seq).padStart(3,'0')}</span>
+        <span class="no mono del-trigger" data-id="${r.id}" style="cursor: default;" title="No. Urut">#${String(seq).padStart(3,'0')}</span>
         <img src="${r.photo}" alt="${escapeHtml(r.name)}" class="thumb-img" data-photo="${r.photo}" title="Klik untuk lihat foto">
         <div class="info">
           <div class="name-row">
@@ -794,8 +798,7 @@ function renderLog(){
           ${r.note ? `<div class="note">${escapeHtml(r.note)}</div>` : ''}
         </div>
         <div class="entry-actions">
-          <button class="edit" data-id="${r.id}" title="Edit catatan">✎</button>
-          <button class="del" data-id="${r.id}" title="Hapus catatan">✕</button>
+          <button class="edit" data-id="${r.id}" title="Edit catatan">✎ Edit</button>
         </div>
       </div>
     `;
@@ -857,11 +860,11 @@ logList.addEventListener('click', async (e)=>{
     return;
   }
 
-  const btn = e.target.closest('.del');
-  if(!btn) return;
-  if(confirm('Hapus absen ini?')) {
-    btn.disabled = true;
-    await deleteRecord(btn.dataset.id);
+  const secretDelTrigger = e.target.closest('.del-trigger');
+  if(secretDelTrigger) {
+    if(confirm('Hapus absen ini?')) {
+      await deleteRecord(secretDelTrigger.dataset.id);
+    }
   }
 });
 
