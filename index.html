@@ -290,13 +290,24 @@
   .pill.Alpa{background:rgba(239, 68, 68, 0.15);color:#dc2626;border:1px solid var(--danger);}
   .entry .time{font-family:'IBM Plex Mono', monospace;font-size:11px;color:var(--muted);margin-top:2px;}
   .entry .note{font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.4;}
-  .del{
-    background: transparent; border: none; color: rgba(0, 0, 0, 0.08);
+  .entry-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-self: center;
+    margin-left: auto;
+    align-items: center;
+  }
+  .edit, .del{
+    background: transparent; border: none; color: rgba(0, 0, 0, 0.02);
     font-size: 11px; cursor: pointer; padding: 6px; line-height: 1;
-    align-self: center; transition: var(--transition); margin-left: auto;
+    transition: var(--transition);
+  }
+  .edit:hover{
+    color: rgba(2, 132, 199, 0.25);
   }
   .del:hover{
-    color: rgba(239, 68, 68, 0.5);
+    color: rgba(239, 68, 68, 0.2);
   }
 
   .note-share{
@@ -480,6 +491,7 @@
       <div class="submit-msg" id="submitMsg"></div>
 
       <button class="btn-primary btn-full" id="btnSubmit" style="margin-top:4px;">Catat Absen</button>
+      <button class="btn-ghost btn-full" id="btnCancelEdit" style="margin-top:8px; display:none;">Batal Edit</button>
       <div class="note-share">Riwayat absen di bawah ini bersifat bersama — terlihat oleh semua pengguna halaman ini,tolong jangan ada yang meghapus absennya,nanti di marahi pak ketuplak habibi.</div>
     </div>
 
@@ -579,11 +591,13 @@ const logList = document.getElementById('logList');
 const countPill = document.getElementById('countPill');
 const searchInput = document.getElementById('searchInput');
 const btnExport = document.getElementById('btnExport');
+const btnCancelEdit = document.getElementById('btnCancelEdit');
 
 let currentStatus = 'Hadir';
 let capturedPhoto = null;
 let stream = null;
 let records = [];
+let editingRecordId = null;
 
 const STORAGE_KEY = 'absen-log';
 
@@ -779,7 +793,10 @@ function renderLog(){
           <div class="time">${dt}</div>
           ${r.note ? `<div class="note">${escapeHtml(r.note)}</div>` : ''}
         </div>
-        <button class="del" data-id="${r.id}" title="Hapus catatan">✕</button>
+        <div class="entry-actions">
+          <button class="edit" data-id="${r.id}" title="Edit catatan">✎</button>
+          <button class="del" data-id="${r.id}" title="Hapus catatan">✕</button>
+        </div>
       </div>
     `;
   }).join('');
@@ -798,12 +815,80 @@ logList.addEventListener('click', async (e)=>{
     return;
   }
 
+  const editBtn = e.target.closest('.edit');
+  if(editBtn){
+    const record = records.find(r => r.id === editBtn.dataset.id);
+    if(record){
+      editingRecordId = record.id;
+      inpName.value = record.name;
+      inpNote.value = record.note || '';
+      
+      // Update Status Chip
+      currentStatus = record.status;
+      document.querySelectorAll('.status-chip').forEach(c => {
+        if(c.dataset.s === currentStatus) {
+          c.classList.add('active');
+        } else {
+          c.classList.remove('active');
+        }
+      });
+      
+      // Update Photo
+      if(record.photo && !record.photo.startsWith('data:image/svg+xml')){
+        capturedPhoto = record.photo;
+        showCaptured();
+      } else {
+        capturedPhoto = null;
+        // reset camera preview
+        video.style.display = 'block';
+        photoPreview.style.display = 'none';
+        badgeRing.style.display = 'none';
+        stampTime.style.display = 'none';
+        btnCapture.style.display = 'block';
+        btnRetake.style.display = 'none';
+      }
+      
+      btnSubmit.textContent = 'Simpan Perubahan';
+      btnCancelEdit.style.display = 'block';
+      
+      // Scroll to form input
+      inpName.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    return;
+  }
+
   const btn = e.target.closest('.del');
   if(!btn) return;
   if(confirm('Hapus absen ini?')) {
     btn.disabled = true;
     await deleteRecord(btn.dataset.id);
   }
+});
+
+btnCancelEdit.addEventListener('click', () => {
+  editingRecordId = null;
+  inpName.value = '';
+  inpNote.value = '';
+  capturedPhoto = null;
+  currentStatus = 'Hadir';
+  document.querySelectorAll('.status-chip').forEach(c => {
+    if(c.dataset.s === 'Hadir') {
+      c.classList.add('active');
+    } else {
+      c.classList.remove('active');
+    }
+  });
+  
+  // Reset camera preview
+  video.style.display = 'block';
+  photoPreview.style.display = 'none';
+  badgeRing.style.display = 'none';
+  stampTime.style.display = 'none';
+  btnCapture.style.display = 'block';
+  btnRetake.style.display = 'none';
+  
+  btnSubmit.textContent = 'Catat Absen';
+  btnCancelEdit.style.display = 'none';
 });
 
 document.getElementById('btnCloseModal').addEventListener('click', ()=>{
@@ -887,18 +972,33 @@ btnSubmit.addEventListener('click', async ()=>{
   const svgString = `<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200"><rect width="200" height="200" fill="#F1EEE6"/><text x="100" y="100" font-family="sans-serif" font-size="18" font-weight="bold" fill="#B0473E" text-anchor="middle" dy=".3em">${safeText}</text></svg>`;
   const noPhotoPlaceholder = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svgString);
 
-  const record = {
-    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
-    name,
-    status: currentStatus,
-    note: inpNote.value.trim(),
-    photo: capturedPhoto || noPhotoPlaceholder,
-    timestamp: Date.now()
-  };
+  let record;
+  if(editingRecordId) {
+    const existing = records.find(r => r.id === editingRecordId);
+    record = {
+      ...existing,
+      name,
+      status: currentStatus,
+      note: inpNote.value.trim(),
+      photo: capturedPhoto || noPhotoPlaceholder,
+      timestamp: existing ? existing.timestamp : Date.now()
+    };
+  } else {
+    record = {
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+      name,
+      status: currentStatus,
+      note: inpNote.value.trim(),
+      photo: capturedPhoto || noPhotoPlaceholder,
+      timestamp: Date.now()
+    };
+  }
 
   await saveRecord(record);
 
   // reset form
+  editingRecordId = null;
+  btnCancelEdit.style.display = 'none';
   inpName.value = '';
   inpNote.value = '';
   capturedPhoto = null;
